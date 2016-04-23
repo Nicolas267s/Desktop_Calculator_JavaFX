@@ -10,7 +10,7 @@ import javafx.stage.Stage;
 public class Calculator extends Application {
 
     @Override
-    public void start(Stage mainWindow) throws Exception{
+    public void start(Stage mainWindow) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("userinterface.fxml"));
         mainWindow.setTitle("Calculator");
         mainWindow.setScene(new Scene(root, 300, 400));
