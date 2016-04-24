@@ -7,17 +7,27 @@ import javafx.scene.input.KeyEvent;
 
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
+import java.text.DecimalFormat;
 
 public class Controller {
 
+    // Texts to display
     private String inputText = "";
-    private double num1 = 0;
-    private double num2 = 0;
-    private char action;
+    private String storedOperands = "";
+
+    // Operands
+    private Double num1 = 0.0;
+    private Double num2 = 0.0;
+
+    // Value with one space means that there is no action.
+    private char action = ' ';
+
+    private DecimalFormat decimalFormat = new DecimalFormat("#.#######################################################");
 
     /*TODO
-    * Сделать так чтобы все цифры отображались с запятыми вместо точек.
     * Добавить остальные функции кнопок, кв.корень, проценты и пр.
+    * При нажатии на минус, если ничего не введено менять знак.
+    * Исправить ошибки, и наладить работу при повторном нажатии на + - * /. Строка 177
     * */
 
     private ActionEvent keyPressedEvent = new ActionEvent();
@@ -141,32 +151,36 @@ public class Controller {
     @FXML
     private void buttonPlus(ActionEvent event) {
         action = '+';
-        num1 = Double.parseDouble(inputText);
-        textFieldInput.setText(num1 + " " + action);
-        inputText = "";
-        textFieldResults.setText(inputText);
+        saveNum1AndUpdateText();
     }
 
     @FXML
     private void buttonMinus(ActionEvent event) {
         action = '-';
-        num1 = Double.parseDouble(inputText);
-        inputText = "";
-        textFieldResults.setText(inputText);
+        saveNum1AndUpdateText();
     }
 
     @FXML
     private void buttonMultiply(ActionEvent event) {
         action = '*';
-        num1 = Double.parseDouble(inputText);
-        inputText = "";
-        textFieldResults.setText(inputText);
+        saveNum1AndUpdateText();
     }
 
     @FXML
     private void buttonDivide(ActionEvent event) {
         action = '/';
+        saveNum1AndUpdateText();
+    }
+
+    private void saveNum1AndUpdateText() {
+        // Replace the commas to dots for parsing, and vice versa.
+        inputText = inputText.replace(",", ".");
         num1 = Double.parseDouble(inputText);
+        inputText = inputText.replace(".", ",");
+
+        // Saving input operands to a variable to switch dots&commas.
+        storedOperands = (decimalFormat.format(num1) + " " + action).replace('.', ',');
+        textFieldInput.setText(storedOperands);
         inputText = "";
         textFieldResults.setText(inputText);
     }
@@ -176,26 +190,28 @@ public class Controller {
         // double requires dot symbol, but comma is more common in math,
         // so we will replace them before and after parsing.
         if (action != ' ') {
-            inputText.replace(',', '.');
+            inputText = inputText.replaceAll(",", ".");
 
             if (action == '+') {
                 num2 = Double.parseDouble(inputText);
-                inputText = (num1 + num2) + "";
+                inputText = decimalFormat.format((num1 + num2)) + "";
 
             } else if (action == '-') {
                 num2 = Double.parseDouble(inputText);
-                inputText = (num1 - num2) + "";
+                inputText = decimalFormat.format((num1 - num2)) + "";
 
             } else if (action == '*') {
                 num2 = Double.parseDouble(inputText);
-                inputText = (num1 * num2) + "";
+                inputText = decimalFormat.format((num1 * num2)) + "";
 
             } else if (action == '/') {
                 num2 = Double.parseDouble(inputText);
-                inputText = (num1 / num2) + "";
+                inputText = decimalFormat.format((num1 / num2)) + "";
             }
-            textFieldInput.setText((num1 + " " + action + " " + num2).replace('.', ','));
-            textFieldResults.setText(inputText.replace('.', ','));
+            inputText = inputText.replace('.', ',');
+            storedOperands = (decimalFormat.format(num1) + " " + action + " " + decimalFormat.format(num2)).replace('.', ',');
+            textFieldInput.setText(storedOperands);
+            textFieldResults.setText(inputText);
         }
     }
 
@@ -219,8 +235,8 @@ public class Controller {
     private void buttonC(ActionEvent event) {
         // "C" button removes all input data.
         inputText = "";
-        num1 = 0;
-        num2 = 0;
+        num1 = 0.0;
+        num2 = 0.0;
         action = ' ';
         textFieldInput.setText(inputText);
         textFieldResults.setText(inputText);
@@ -228,12 +244,15 @@ public class Controller {
 
     @FXML
     private void buttonPositiveNegative(ActionEvent event) {
-        // If last input is a second number, copy value to the second number and make it negative.
+        // If last input is the first number, copy it's value to the second number and make it negative.
         // 12 * (+/-) == 12 * (-12)
-        if (inputText.isEmpty() && num1 != 0) {
-            num2 = num1 * -1;
+        if (inputText.equals("0")) {
+            inputText = "-";
+            textFieldResults.setText(inputText);
         } else {
+            // For all the rest
             inputText = "-" + inputText;
+            textFieldResults.setText(inputText);
         }
     }
 
@@ -253,70 +272,95 @@ public class Controller {
     }
 
     @FXML
+    private void buttonComma(ActionEvent event) {
+        if (inputText.isEmpty()) {
+            inputText += "0,";
+            textFieldResults.setText(inputText);
+        } else if (!inputText.contains(",")) {
+            inputText += ",";
+            textFieldResults.setText(inputText);
+        }
+    }
+
+    @FXML
     private void button0(ActionEvent event) {
-        inputText += "0";
-        textFieldResults.setText(inputText);
+        if (inputText.isEmpty() || inputText.equals("0")) {
+            inputText = "0";
+            textFieldResults.setText(inputText);
+        } else {
+            inputText += "0";
+            textFieldResults.setText(inputText);
+        }
+    }
+
+    private void removeFirstDigitIfZero() {
+        String[] split = inputText.split(",");
+        if (!inputText.isEmpty() && inputText.charAt(0) == '0') {
+            inputText = inputText.substring(1);
+            removeFirstDigitIfZero();
+        }
     }
 
     @FXML
     private void button1(ActionEvent event) {
+        removeFirstDigitIfZero();
         inputText += "1";
         textFieldResults.setText(inputText);
     }
 
     @FXML
     private void button2(ActionEvent event) {
+        removeFirstDigitIfZero();
         inputText += "2";
         textFieldResults.setText(inputText);
     }
 
     @FXML
     private void button3(ActionEvent event) {
+        removeFirstDigitIfZero();
         inputText += "3";
         textFieldResults.setText(inputText);
     }
 
     @FXML
     private void button4(ActionEvent event) {
+        removeFirstDigitIfZero();
         inputText += "4";
         textFieldResults.setText(inputText);
     }
 
     @FXML
     private void button5(ActionEvent event) {
+        removeFirstDigitIfZero();
         inputText += "5";
         textFieldResults.setText(inputText);
     }
 
     @FXML
     private void button6(ActionEvent event) {
+        removeFirstDigitIfZero();
         inputText += "6";
         textFieldResults.setText(inputText);
     }
 
     @FXML
     private void button7(ActionEvent event) {
+        removeFirstDigitIfZero();
         inputText += "7";
         textFieldResults.setText(inputText);
     }
 
     @FXML
     private void button8(ActionEvent event) {
+        removeFirstDigitIfZero();
         inputText += "8";
         textFieldResults.setText(inputText);
     }
 
     @FXML
     private void button9(ActionEvent event) {
+        removeFirstDigitIfZero();
         inputText += "9";
         textFieldResults.setText(inputText);
-    }
-
-    @FXML
-    private void buttonComma(ActionEvent event) {
-        if (!inputText.contains(",")) {
-            inputText += ",";
-            textFieldResults.setText(inputText);
-        }
     }
 }
