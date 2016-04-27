@@ -10,10 +10,12 @@ import java.awt.datatransfer.StringSelection;
 import java.text.DecimalFormat;
 
 /*TODO
-    * Добавить остальные функции кнопок, кв.корень, проценты и пр.
     * Исправить ошибки, и наладить работу при повторном нажатии на + - * /. Строка 177
     * Сделать, чтобы при нажатии на цифры после вывода результата, сначала затирался этот результат.
-    * * */
+    * Добавить действия и команды к контекстное меню.
+    * Добавить возможность вставлять и копировать результат. Реализовать методы copy/paste.
+    * Переименовать некоторые методы и поля.
+    */
 
 public class Controller {
 
@@ -157,6 +159,7 @@ public class Controller {
 
     @FXML
     private void buttonMinus(ActionEvent event) {
+        // If nothing input, change positive/negative.
         if (inputText.isEmpty() || inputText.equals("0") || inputText.equals("-")) {
             buttonPositiveNegative(event);
         } else {
@@ -179,13 +182,12 @@ public class Controller {
 
     private void saveNum1AndUpdateText() {
         if (!inputText.isEmpty()) {
-            // Replace the commas to dots for parsing, and vice versa.
+            // Replace the commas to dots for parsing.
             inputText = inputText.replace(",", ".");
             num1 = Double.parseDouble(inputText);
-            inputText = inputText.replace(".", ",");
 
-            // Saving input operands to a variable to switch dots&commas.
-            storedOperands = (decimalFormat.format(num1) + " " + action).replace('.', ',');
+            // Saving input operands to a variable and format them with DecimalFormat.
+            storedOperands = (decimalFormat.format(num1) + " " + action);
             textFieldInput.setText(storedOperands);
             inputText = "";
             textFieldResults.setText("0");
@@ -195,7 +197,8 @@ public class Controller {
     @FXML
     private void buttonEquals(ActionEvent event) {
         // double requires dot symbol, but comma is more common in math,
-        // so we will replace them before and after parsing.
+        // so we will replace them before parsing.
+        // Decimal format do it automatically after parsing.
         if (action != ' ' && !inputText.isEmpty()) {
             inputText = inputText.replaceAll(",", ".");
 
@@ -222,10 +225,8 @@ public class Controller {
                     result = num1 / num2;
                     inputText = decimalFormat.format(result);
                     break;
-
             }
-            inputText = inputText.replace('.', ',');
-            storedOperands = (decimalFormat.format(num1) + " " + action + " " + decimalFormat.format(num2)).replace('.', ',');
+            storedOperands = (decimalFormat.format(num1) + " " + action + " " + decimalFormat.format(num2));
             textFieldInput.setText(storedOperands);
             textFieldResults.setText(inputText);
         }
@@ -259,7 +260,7 @@ public class Controller {
         num2 = null;
         result = null;
         action = ' ';
-        textFieldInput.setText(inputText);
+        textFieldInput.setText("");
         textFieldResults.setText("0");
     }
 
@@ -287,36 +288,78 @@ public class Controller {
     @FXML
     private void buttonSquareRoot(ActionEvent event) {
         // This button changes the last input number to it's square root.
-        if (!inputText.isEmpty() || !inputText.equals("0")) {
-            storedOperands = " √" + inputText;
-            inputText = inputText.replaceAll(",", ".");
+        if (inputText.isEmpty() || inputText.equals("0")) {
+            inputText = "0";
+        }
 
-            double temp = Math.sqrt(Double.parseDouble(inputText));
+        storedOperands = " √" + inputText;
+        inputText = inputText.replaceAll(",", ".");
 
-            inputText = "" + temp;
-            if (inputText.equals("NaN")) {
-                textFieldInput.setText(storedOperands);
-                textFieldResults.setText("Does not exist");
+        double temp = Math.sqrt(Double.parseDouble(inputText));
+        inputText = "" + temp;
+
+        if (inputText.equals("NaN")) {
+            textFieldInput.setText(storedOperands);
+            textFieldResults.setText("Does not exist");
+
+        } else {
+            inputText = decimalFormat.format(temp);
+
+            if (num1 != null) {
+                textFieldInput.setText(textFieldInput.getText() + storedOperands);
+
             } else {
-                inputText = decimalFormat.format(temp);
-                if (num1 != null) {
-                    textFieldInput.setText(textFieldInput.getText() + storedOperands);
-                } else {
-                    textFieldInput.setText(storedOperands);
-                }
+                textFieldInput.setText(storedOperands);
+            }
+            textFieldResults.setText(inputText);
+        }
+
+    }
+
+    @FXML
+    private void buttonPercent(ActionEvent event) {
+        // This button changes the last input number to
+        // it's percent value of the first number(num1)
+        if (!inputText.isEmpty() || !inputText.equals("0")) {
+            if (num1 != null) {
+                inputText = inputText.replaceAll(",", ".");
+                double temp = Double.parseDouble(inputText);
+
+                storedOperands = textFieldInput.getText() + " " + inputText + "%";
+                inputText = "" + decimalFormat.format(num1 / 100 * temp);
+
+                textFieldInput.setText(storedOperands);
                 textFieldResults.setText(inputText);
             }
         }
     }
 
     @FXML
-    private void buttonPercent(ActionEvent event) {
-        // This button changes the last input number to it'
-    }
-
-    @FXML
     private void buttonFraction(ActionEvent event) {
+        // This button changes the last input number to
+        // a result of 1 divided by the last entered number.
+        if (!inputText.isEmpty() && !inputText.equals("0")) {
+            storedOperands = " 1/" + inputText;
+            inputText = inputText.replaceAll(",", ".");
 
+            double temp = 1.0 / (Double.parseDouble(inputText));
+            inputText = decimalFormat.format(temp);
+
+            if (num1 != null) {
+                textFieldInput.setText(textFieldInput.getText() + storedOperands);
+            } else {
+                textFieldInput.setText(storedOperands);
+            }
+            textFieldResults.setText(inputText);
+
+        } else if (inputText.isEmpty() || inputText.equals("0")) {
+            if (num1 != null) {
+                textFieldInput.setText(textFieldInput.getText() + " 1/0");
+            } else {
+                textFieldInput.setText(" 1/0");
+            }
+            textFieldResults.setText("Can not divide by zero");
+        }
     }
 
     @FXML
@@ -330,6 +373,14 @@ public class Controller {
         }
     }
 
+    // This method removes unnecessary zeros in front of the first none zero digit.
+    private void removeFirstDigitIfZero() {
+        if (!inputText.isEmpty() && inputText.charAt(0) == '0' && !inputText.contains(",")) {
+            inputText = inputText.substring(1);
+            removeFirstDigitIfZero();
+        }
+    }
+
     @FXML
     private void button0(ActionEvent event) {
         if (inputText.isEmpty() || inputText.equals("0")) {
@@ -338,13 +389,6 @@ public class Controller {
         } else {
             inputText += "0";
             textFieldResults.setText(inputText);
-        }
-    }
-
-    private void removeFirstDigitIfZero() {
-        if (!inputText.isEmpty() && inputText.charAt(0) == '0' && !inputText.contains(",")) {
-            inputText = inputText.substring(1);
-            removeFirstDigitIfZero();
         }
     }
 
