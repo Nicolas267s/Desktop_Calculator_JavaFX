@@ -10,11 +10,12 @@ import java.awt.datatransfer.StringSelection;
 import java.text.DecimalFormat;
 
 /*TODO
-    * Исправить ошибки, и наладить работу при повторном нажатии на + - * /. Строка 177
-    * Сделать, чтобы при нажатии на цифры после вывода результата, сначала затирался этот результат.
     * Добавить действия и команды к контекстное меню.
-    * Добавить возможность вставлять и копировать результат. Реализовать методы copy/paste.
     * Переименовать некоторые методы и поля.
+    * Добавить возможность вставлять и копировать результат. Реализовать методы copy/paste.
+    * Пересмотреть архитектуру методов связанных с знаками.
+    * Исправить: При нажатии на знак( + - * / ), сразу после первой операции, меняется знак первой операции.
+    *           Это происходит потому что знак заменяется раньше, чем выполняется метод actionEquals
     */
 
 public class Controller {
@@ -27,6 +28,9 @@ public class Controller {
     private Double num1 = null;
     private Double num2 = null;
     private Double result = null;
+
+    // To check if buttonEquals was pressed already in this operation.
+    private boolean equalsPressed = false;
 
     // Value with one space means that there is no action.
     private char action = ' ';
@@ -159,13 +163,8 @@ public class Controller {
 
     @FXML
     private void buttonMinus(ActionEvent event) {
-        // If nothing input, change positive/negative.
-        if (inputText.isEmpty() || inputText.equals("0") || inputText.equals("-")) {
-            buttonPositiveNegative(event);
-        } else {
-            action = '-';
-            saveNum1AndUpdateText();
-        }
+        action = '-';
+        saveNum1AndUpdateText();
     }
 
     @FXML
@@ -181,16 +180,65 @@ public class Controller {
     }
 
     private void saveNum1AndUpdateText() {
-        if (!inputText.isEmpty()) {
-            // Replace the commas to dots for parsing.
-            inputText = inputText.replace(",", ".");
+        if (inputText.isEmpty()) {
+            inputText = "0";
+        }
+        // Replace the commas to dots for parsing.
+        inputText = inputText.replace(",", ".");
+        if (num1 == null) {
             num1 = Double.parseDouble(inputText);
-
             // Saving input operands to a variable and format them with DecimalFormat.
             storedOperands = (decimalFormat.format(num1) + " " + action);
             textFieldInput.setText(storedOperands);
-            inputText = "";
+            inputText = "0";
             textFieldResults.setText("0");
+        } else {
+            actionEquals();
+            storedOperands = (decimalFormat.format(result) + " " + action);
+            textFieldInput.setText(storedOperands);
+            inputText = "0";
+            textFieldResults.setText("0");
+            num2 = null;
+        }
+
+    }
+
+    // This method represents the completion of the last action.
+    public void actionEquals() {
+        if (result != null) {
+            num1 = result;
+            if (num2 == null) {
+                num2 = Double.parseDouble(inputText);
+            }
+        } else {
+            num2 = Double.parseDouble(inputText);
+        }
+
+        switch (action) {
+            case '+':
+                result = num1 + num2;
+                inputText = decimalFormat.format(result);
+                break;
+            case '-':
+                result = num1 - num2;
+                inputText = decimalFormat.format(result);
+                break;
+            case '*':
+                if (num2 == 0) {
+                    inputText = "0";
+                } else {
+                    result = num1 * num2;
+                    inputText = decimalFormat.format(result);
+                }
+                break;
+            case '/':
+                if (num2 == 0) {
+                    inputText = "Can not divide by zero";
+                } else {
+                    result = num1 / num2;
+                    inputText = decimalFormat.format(result);
+                }
+                break;
         }
     }
 
@@ -202,33 +250,12 @@ public class Controller {
         if (action != ' ' && !inputText.isEmpty()) {
             inputText = inputText.replaceAll(",", ".");
 
-            if (result != null) {
-                num1 = result;
-            } else {
-                num2 = Double.parseDouble(inputText);
-            }
+            actionEquals();
 
-            switch (action) {
-                case '+':
-                    result = num1 + num2;
-                    inputText = decimalFormat.format(result);
-                    break;
-                case '-':
-                    result = num1 - num2;
-                    inputText = decimalFormat.format(result);
-                    break;
-                case '*':
-                    result = num1 * num2;
-                    inputText = decimalFormat.format(result);
-                    break;
-                case '/':
-                    result = num1 / num2;
-                    inputText = decimalFormat.format(result);
-                    break;
-            }
             storedOperands = (decimalFormat.format(num1) + " " + action + " " + decimalFormat.format(num2));
             textFieldInput.setText(storedOperands);
             textFieldResults.setText(inputText);
+            equalsPressed = true;
         }
     }
 
@@ -288,29 +315,31 @@ public class Controller {
     @FXML
     private void buttonSquareRoot(ActionEvent event) {
         // This button changes the last input number to it's square root.
-        if (inputText.isEmpty() || inputText.equals("0")) {
+        if (inputText.isEmpty()) {
             inputText = "0";
+        } else if (inputText.equals("-")) {
+            textFieldInput.setText("√-");
+            textFieldResults.setText("Does not exist");
+            return;
         }
 
-        storedOperands = " √" + inputText;
         inputText = inputText.replaceAll(",", ".");
+        double temp = Double.parseDouble(inputText);
+        inputText = "" + decimalFormat.format(Math.sqrt(temp));
 
-        double temp = Math.sqrt(Double.parseDouble(inputText));
-        inputText = "" + temp;
+        if (num1 != null && action != ' ') {
+            storedOperands = decimalFormat.format(num1) + " " + action + " √" + decimalFormat.format(temp);
+            num2 = Math.sqrt(temp);
+        } else {
+            storedOperands = "√" + decimalFormat.format(temp);
+        }
 
-        if (inputText.equals("NaN")) {
+        if (inputText.equals("NaN") || temp < 0) {
             textFieldInput.setText(storedOperands);
             textFieldResults.setText("Does not exist");
 
         } else {
-            inputText = decimalFormat.format(temp);
-
-            if (num1 != null) {
-                textFieldInput.setText(textFieldInput.getText() + storedOperands);
-
-            } else {
-                textFieldInput.setText(storedOperands);
-            }
+            textFieldInput.setText(storedOperands);
             textFieldResults.setText(inputText);
         }
 
@@ -381,9 +410,14 @@ public class Controller {
         }
     }
 
+    /* For every numeric button, if button equals was pressed in last operation, clear all and start input next one.*/
     @FXML
     private void button0(ActionEvent event) {
-        if (inputText.isEmpty() || inputText.equals("0")) {
+        if (equalsPressed) {
+            buttonC(event);
+            equalsPressed = false;
+        }
+        if (inputText.isEmpty() || inputText.equals("0") || inputText.equals("-")) {
             inputText = "0";
             textFieldResults.setText(inputText);
         } else {
@@ -394,6 +428,10 @@ public class Controller {
 
     @FXML
     private void button1(ActionEvent event) {
+        if (equalsPressed) {
+            buttonC(event);
+            equalsPressed = false;
+        }
         removeFirstDigitIfZero();
         inputText += "1";
         textFieldResults.setText(inputText);
@@ -401,6 +439,10 @@ public class Controller {
 
     @FXML
     private void button2(ActionEvent event) {
+        if (equalsPressed) {
+            buttonC(event);
+            equalsPressed = false;
+        }
         removeFirstDigitIfZero();
         inputText += "2";
         textFieldResults.setText(inputText);
@@ -408,6 +450,10 @@ public class Controller {
 
     @FXML
     private void button3(ActionEvent event) {
+        if (equalsPressed) {
+            buttonC(event);
+            equalsPressed = false;
+        }
         removeFirstDigitIfZero();
         inputText += "3";
         textFieldResults.setText(inputText);
@@ -415,6 +461,10 @@ public class Controller {
 
     @FXML
     private void button4(ActionEvent event) {
+        if (equalsPressed) {
+            buttonC(event);
+            equalsPressed = false;
+        }
         removeFirstDigitIfZero();
         inputText += "4";
         textFieldResults.setText(inputText);
@@ -422,6 +472,10 @@ public class Controller {
 
     @FXML
     private void button5(ActionEvent event) {
+        if (equalsPressed) {
+            buttonC(event);
+            equalsPressed = false;
+        }
         removeFirstDigitIfZero();
         inputText += "5";
         textFieldResults.setText(inputText);
@@ -429,6 +483,10 @@ public class Controller {
 
     @FXML
     private void button6(ActionEvent event) {
+        if (equalsPressed) {
+            buttonC(event);
+            equalsPressed = false;
+        }
         removeFirstDigitIfZero();
         inputText += "6";
         textFieldResults.setText(inputText);
@@ -436,6 +494,10 @@ public class Controller {
 
     @FXML
     private void button7(ActionEvent event) {
+        if (equalsPressed) {
+            buttonC(event);
+            equalsPressed = false;
+        }
         removeFirstDigitIfZero();
         inputText += "7";
         textFieldResults.setText(inputText);
@@ -443,6 +505,10 @@ public class Controller {
 
     @FXML
     private void button8(ActionEvent event) {
+        if (equalsPressed) {
+            buttonC(event);
+            equalsPressed = false;
+        }
         removeFirstDigitIfZero();
         inputText += "8";
         textFieldResults.setText(inputText);
@@ -450,6 +516,10 @@ public class Controller {
 
     @FXML
     private void button9(ActionEvent event) {
+        if (equalsPressed) {
+            buttonC(event);
+            equalsPressed = false;
+        }
         removeFirstDigitIfZero();
         inputText += "9";
         textFieldResults.setText(inputText);
