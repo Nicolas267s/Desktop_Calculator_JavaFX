@@ -46,7 +46,7 @@
                     <children>
                         <StackPane alignment="CENTER">
                             <children>
-                                <TextField fx:id="textFieldResults" alignment="BOTTOM_RIGHT" editable="false" focusTraversable="false" minHeight="75.0" onAction="#copyToClipboard" onInputMethodTextChanged="#pasteFromClipboard" prefHeight="75.0" prefWidth="270.0" promptText="0" text="0">
+                                <TextField fx:id="inputOutputField" alignment="BOTTOM_RIGHT" editable="false" focusTraversable="false" minHeight="75.0" onAction="#copyToClipboard" onInputMethodTextChanged="#pasteFromClipboard" prefHeight="75.0" prefWidth="270.0" promptText="0" text="0">
                                     <StackPane.margin>
                                         <Insets bottom="15.0" top="10.0" />
                                     </StackPane.margin>
@@ -57,7 +57,7 @@
                                         <Cursor fx:constant="HAND" />
                                     </cursor>
                                 </TextField>
-                                <TextField fx:id="textFieldInput" alignment="TOP_RIGHT" disable="true" editable="false" focusTraversable="false" minHeight="75.0" onAction="#copyToClipboard" onContextMenuRequested="#pasteFromClipboard" prefHeight="75.0" prefWidth="270.0">
+                                <TextField fx:id="expressionField" alignment="TOP_RIGHT" disable="true" editable="false" focusTraversable="false" minHeight="75.0" onAction="#copyToClipboard" onContextMenuRequested="#pasteFromClipboard" prefHeight="75.0" prefWidth="270.0">
                                     <cursor>
                                         <Cursor fx:constant="HAND" />
                                     </cursor>
