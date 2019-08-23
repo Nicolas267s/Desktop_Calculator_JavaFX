@@ -13,7 +13,7 @@ public class Calculator extends Application {
    public void start(Stage mainWindow) throws Exception {
       Parent root = FXMLLoader.load(getClass().getResource("/userinterface.fxml"));
       mainWindow.setTitle("Calculator");
-      mainWindow.setScene(new Scene(root, 300, 400));
+      mainWindow.setScene(new Scene(root, 300, 410));
       mainWindow.setResizable(false);
       mainWindow.getIcons().add(new Image("file:src/main/resources/icon.PNG"));
       mainWindow.show();

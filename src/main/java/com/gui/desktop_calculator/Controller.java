@@ -13,6 +13,7 @@ import java.text.DecimalFormat;
  * @TODO:
  *    - Добавить действия и команды к контекстное меню.
  *    - Добавить возможность вставлять и копировать результат. (Реализовать методы copy/paste)
+ *    - Добавить кнопку возведения в произвольную степень.
  */
 public class Controller {
 
@@ -35,6 +36,8 @@ public class Controller {
 
    // Value with a "space" means that there is no action.
    private char action = ' ';
+
+   private String memory = "0";
 
    private DecimalFormat decimalFormat = new DecimalFormat("#.#######################################################");
    private ActionEvent keyPressedEvent = new ActionEvent();
@@ -162,6 +165,34 @@ public class Controller {
    }
 
    @FXML
+   /** Memory Clear */
+   private void buttonMC() {
+      memory = "0";
+   }
+
+   @FXML
+   /** Memory Read */
+   private void buttonMR() {
+      inputOutputField.setText(memory);
+   }
+
+   @FXML
+   /** Memory Minus */
+   private void buttonM_minus() {
+      double m = Double.parseDouble(memory);
+      double n = Double.parseDouble(inputOutputField.getText());
+      memory = decimalFormat.format(m - n);
+   }
+
+   @FXML
+   /** Memory Plus */
+   private void buttonM_plus() {
+      double m = Double.parseDouble(memory);
+      double n = Double.parseDouble(inputOutputField.getText());
+      memory = decimalFormat.format(m + n);
+   }
+
+   @FXML
    private void buttonPlus(ActionEvent event) {
       saveInput('+');
       updateTextOnDisplay();
@@ -232,7 +263,13 @@ public class Controller {
             }
          }
          if (equalsPerformed) {
-            expression.append(decimalFormat.format(num2));
+            if (num2 < 0) {
+               expression.append("(");
+               expression.append(decimalFormat.format(num2));
+               expression.append(")");
+            } else {
+               expression.append(decimalFormat.format(num2));
+            }
          }
       }
 
