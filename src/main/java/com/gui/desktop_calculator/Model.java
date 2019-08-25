@@ -20,6 +20,8 @@ public class Model {
             } else {
                return num1 / num2;
             }
+         case '^':
+            return Math.pow(num1, num2);
          default:
             System.out.println("CALCULATION ERROR");
             return -1.999999999999999999999;

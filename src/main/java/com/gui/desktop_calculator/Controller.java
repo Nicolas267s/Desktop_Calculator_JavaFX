@@ -13,7 +13,6 @@ import java.text.DecimalFormat;
  * @TODO:
  *    - Добавить действия и команды к контекстное меню.
  *    - Добавить возможность вставлять и копировать результат. (Реализовать методы copy/paste)
- *    - Добавить кнопку возведения в произвольную степень.
  */
 public class Controller {
 
@@ -51,6 +50,9 @@ public class Controller {
    @FXML
    // This field displays last input numbers and the calculation results.
    private TextField inputOutputField;
+   @FXML
+   // This field displays current value saved in memory.
+   private TextField memoryField;
 
    @FXML
    private void keyPressed(KeyEvent keyEvent) {
@@ -164,32 +166,36 @@ public class Controller {
       System.out.println("PASTE");
    }
 
+   /** Clear memory */
    @FXML
-   /** Memory Clear */
    private void buttonMC() {
       memory = "0";
+      memoryField.setText("");
    }
 
+   /** Get the number from memory field to the input field */
    @FXML
-   /** Memory Read */
    private void buttonMR() {
       inputOutputField.setText(memory);
+      memoryField.setText(memory);
    }
 
+   /** Subtract the entered number from the number in memory */
    @FXML
-   /** Memory Minus */
    private void buttonM_minus() {
       double m = Double.parseDouble(memory);
       double n = Double.parseDouble(inputOutputField.getText());
       memory = decimalFormat.format(m - n);
+      memoryField.setText(memory);
    }
 
+   /** Add the entered number to the number in memory */
    @FXML
-   /** Memory Plus */
    private void buttonM_plus() {
       double m = Double.parseDouble(memory);
       double n = Double.parseDouble(inputOutputField.getText());
       memory = decimalFormat.format(m + n);
+      memoryField.setText(memory);
    }
 
    @FXML
@@ -303,14 +309,18 @@ public class Controller {
    }
 
    @FXML
+   /**
+    * Clear only input field
+    */
    private void buttonCE(ActionEvent event) {
-      // "CE" button removes only last input text.
       inputOutputField.setText("0");
    }
 
    @FXML
+   /**
+    * Clear all fields and variables exept memory
+    */
    private void buttonC(ActionEvent event) {
-      // "C" button removes all input data.
       expressionField.setText("");
       inputOutputField.setText("0");
 
@@ -324,8 +334,10 @@ public class Controller {
    }
 
    @FXML
+   /**
+    * Makes the last input number to negative or positive.
+    */
    private void buttonPositiveNegative(ActionEvent event) {
-      // This button makes last input number to negative or positive.
       if (inputOutputField.getText().equals("0")) {
          inputOutputField.setText("-");
 
@@ -341,8 +353,16 @@ public class Controller {
    }
 
    @FXML
+   private void buttonPow(ActionEvent event) {
+      saveInput('^');
+      updateTextOnDisplay();
+   }
+
+   @FXML
+   /**
+    * Changes the last input number to it's square root value.
+    */
    private void buttonSquareRoot(ActionEvent event) {
-      // This button changes the last input number to it's square root.
       if (inputOutputField.getText().contains("-")) {
          expressionField.setText(SQUARE_ROOT + inputOutputField.getText());
          inputOutputField.setText("Does not exist");
@@ -351,7 +371,7 @@ public class Controller {
 
       double temp = model.calculateTheSquareRoot(Double.parseDouble(inputOutputField.getText().replace(",", ".")));
 
-      if (num1Inputted && action != ' ') {
+      if (num1Inputted && (action != ' ' && !equalsPerformed)) {
          expressionField.setText(expressionField.getText() + SQUARE_ROOT + inputOutputField.getText());
          num2 = temp;
       } else {
@@ -362,9 +382,10 @@ public class Controller {
    }
 
    @FXML
+   /**
+    * Changes the last input number(num2) to it's percent value of the first number(num1)
+    */
    private void buttonPercent(ActionEvent event) {
-      // This button changes the last input number to
-      // it's percent value of the first number(num1)
       if (num1Inputted) {
          double temp = Double.parseDouble(inputOutputField.getText().replace(",", "."));
 
@@ -377,19 +398,18 @@ public class Controller {
    }
 
    @FXML
+   /**
+    * Changes the last input number to a result of 1 divided by the last entered number.
+    */
    private void buttonFraction(ActionEvent event) {
-      // This button changes the last input number to
-      // a result of 1 divided by the last entered number.
       if (inputOutputField.getText().equals("0")) {
          expressionField.setText(inputOutputField.getText() + " 1/0");
          inputOutputField.setText("Can not divide by zero");
 
       } else {
          double temp = model.calculateFraction(Double.parseDouble(inputOutputField.getText().replace(",", ".")));
-
          expressionField.setText(expressionField.getText() + "1/" + inputOutputField.getText());
          inputOutputField.setText(decimalFormat.format(temp));
-
       }
    }
 
@@ -402,7 +422,7 @@ public class Controller {
       }
    }
 
-   // This method removes unnecessary zeros in front of the first none zero digit.
+   /** Removes unnecessary zeros in front of the first none zero digit. */
    private void removeFirstDigitIfZero() {
       if (inputOutputField.getText().equals("0")) {
          inputOutputField.setText("");
